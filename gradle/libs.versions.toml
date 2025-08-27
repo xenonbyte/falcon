@@ -1,0 +1,22 @@
+[versions]
+agp = "8.7.3"
+kotlin = "2.0.0"
+appcompat = "1.7.0"
+annotation = "1.4.0"
+objectpool = "1.0.0"
+activitywatcher = "1.0.2"
+target-sdk = "35"
+compile-sdk = "35"
+min-sdk = "21"
+
+[libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
+xenonbyte-activitywatcher = { group = "com.github.xenonbyte", name = "activitywatcher", version.ref = "activitywatcher" }
+xenonbyte-objectpool = { group = "com.github.xenonbyte", name = "objectpool", version.ref = "objectpool" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+
