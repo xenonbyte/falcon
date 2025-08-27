@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'com.xenonbyte.anr'
+    namespace 'com.xenonbyte.dumper'
     compileSdk libs.versions.compile.sdk.get().toInteger()
 
     defaultConfig {
@@ -34,7 +34,7 @@ dependencies {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId = 'com.xenonbyte.anr'
+            groupId = 'com.github.xenonbyte'
             artifactId = 'dumper'
             version = '1.0.0'
 
