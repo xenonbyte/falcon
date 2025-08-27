@@ -1,10 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id 'maven-publish'
 }
 
 android {
-    namespace 'com.xenonbyte.anr.dumperext'
+    namespace 'com.xenonbyte.anr'
     compileSdk libs.versions.compile.sdk.get().toInteger()
 
     defaultConfig {
@@ -29,4 +30,18 @@ android {
 dependencies {
     api libs.xenonbyte.activitywatcher
     api project(':falcon-dump')
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'com.xenonbyte.anr'
+            artifactId = 'dumper-ext'
+            version = '1.0.0'
+
+            afterEvaluate {
+                from components.release
+            }
+        }
+    }
 }
