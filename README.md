@@ -165,16 +165,16 @@ class FdData(
 
 ## 配置参数详解
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
+| 参数 | 类型 | 默认值 | 说明               |
+|------|------|--------|------------------|
 | **setAnrThreshold** | Long,  Long | 4000, 8000 | ANR触发阈值 (前台, 后台) |
-| **setSlowRunnableThreshold** | Long | 300 | 慢任务触发阈值 |
-| **setLogLevel** | LogLevel | WARN | 日志输出级别 |
-| **setEventListener** | FalconEventListener | 无 | 事件回调监听器 |
-| **setLogPrinter** | LogPrinter | android.android.Log | 日志打印器 |
-| **setMessageSamplingMaxCacheSize** | Int | 30 | 采样消息最大缓存量 |
-| **addEventDumper** | FalconEvent, Dumper | 无 | 添加指定事件的数据转储器 |
-| **setHprofDumpEnabled** | Boolean | true | 开启数据分析 |
+| **setSlowRunnableThreshold** | Long | 300 | 慢任务触发阈值          |
+| **setLogLevel** | LogLevel | WARN | 日志输出级别           |
+| **setEventListener** | FalconEventListener | 无 | 事件回调监听器          |
+| **setLogPrinter** | LogPrinter | android.android.Log | 日志打印器            |
+| **setMessageSamplingMaxCacheSize** | Int | 30 | 采样消息最大缓存量        |
+| **addEventDumper** | FalconEvent, Dumper | 无 | 添加指定事件的数据转储器     |
+| **setHprofDumpEnabled** | Boolean | true | 开启数据分析（低端机型可关闭）  |
 
 
 ## License
