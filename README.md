@@ -362,8 +362,6 @@ class UploadListener : FalconEventListener {
 
 ### 开发规范
 
-- 遵循 [Kotlin 编码规范](https://developer.android.com/kotlin/style-guide)
-- 使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式
 - 所有 PR 需要通过 CI 检查
 - 添加必要的测试和文档
 
@@ -387,17 +385,6 @@ limitations under the License.
 ## 🌟 Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xenonbyte/falcon&type=Date)](https://star-history.com/#xenonbyte/falcon&Date)
-
-
----
-
-<div align="center">
-
-**如果 Falcon 对你有帮助，请给个 ⭐️ Star 支持一下！**
-
-Made with ❤️ by [xubo](https://github.com/xenonbyte)
-
-</div>
 
 ## 📚 文档
 
