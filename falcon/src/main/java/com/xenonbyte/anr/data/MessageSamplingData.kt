@@ -33,7 +33,9 @@ class MessageSamplingData private constructor(
 ) : Reusable {
 
     constructor(
-        index: Long, message: String, startTimestamp: Long
+        index: Long,
+        message: String,
+        startTimestamp: Long
     ) : this(
         FalconTimestamp.currentTimeMillis().toString(),
         index,
@@ -186,5 +188,5 @@ const val KEY_COMPLETE = "complete"
 const val KEY_STACK_TRACE = "stackTrace"
 
 enum class SamplingStatus {
-    START, END;
+    START, END
 }

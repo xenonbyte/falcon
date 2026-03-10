@@ -52,18 +52,17 @@ fun interface LogPrinter {
  * @author xubo
  */
 enum class LogLevel {
-    //不输出日志
+    // 不输出日志
     NONE,
 
-    //只输出ERROR日志
-    //ANR触发时将输出错误日志
+    // 只输出ERROR日志
+    // ANR触发时将输出错误日志
     ERROR,
 
-    //输出ERROR和WARN日志
-    //慢任务触发时将输出警告日志
+    // 输出ERROR和WARN日志
+    // 慢任务触发时将输出警告日志
     WARN,
 
-    //输出包含DEBUG在内的所有日志
+    // 输出包含DEBUG在内的所有日志
     DEBUG,
-    ;
 }

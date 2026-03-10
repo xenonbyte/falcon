@@ -10,10 +10,10 @@ import android.os.SystemClock
  * @author xubo
  */
 internal object FalconTimestamp {
-    //记录时间戳
+    // 记录时间戳
     private val recordTimeMillis = System.currentTimeMillis()
 
-    //记录开机时间
+    // 记录开机时间
     private val recordClockTimeMillis = SystemClock.elapsedRealtime()
 
     /**

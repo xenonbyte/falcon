@@ -6,9 +6,9 @@ package com.xenonbyte.anr
  * @author xubo
  */
 enum class FalconEvent {
-    //Anr事件
+    // Anr事件
     ANR_EVENT,
 
-    //慢任务事件
+    // 慢任务事件
     SLOW_RUNNABLE_EVENT,
 }

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="#1a1a2e"/>
+
+  <!-- Outer Ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#4a90a4" stroke-width="8"/>
+
+  <!-- Falcon Eye Shape - Outer -->
+  <path d="M256 120
+           C380 120 420 256 420 256
+           C420 256 380 392 256 392
+           C132 392 92 256 92 256
+           C92 256 132 120 256 120Z"
+        fill="#16213e" stroke="#4a90a4" stroke-width="6"/>
+
+  <!-- Falcon Eye Shape - Inner Gradient -->
+  <path d="M256 145
+           C360 145 395 256 395 256
+           C395 256 360 367 256 367
+           C152 367 117 256 117 256
+           C117 256 152 145 256 145Z"
+        fill="#0f3460"/>
+
+  <!-- Eye Iris -->
+  <circle cx="256" cy="256" r="80" fill="#e94560"/>
+
+  <!-- Eye Iris Detail -->
+  <circle cx="256" cy="256" r="65" fill="#c73e54"/>
+
+  <!-- Eye Pupil -->
+  <circle cx="256" cy="256" r="35" fill="#1a1a2e"/>
+
+  <!-- Eye Highlight -->
+  <circle cx="240" cy="240" r="15" fill="#ffffff" opacity="0.8"/>
+  <circle cx="275" cy="270" r="8" fill="#ffffff" opacity="0.4"/>
+
+  <!-- Falcon Wing Lines - Left -->
+  <path d="M92 256 L40 220 L60 256 L40 292 Z" fill="#4a90a4" opacity="0.8"/>
+  <path d="M60 230 L20 210 L35 240 L20 260 Z" fill="#4a90a4" opacity="0.5"/>
+  <path d="M60 282 L20 302 L35 272 L20 252 Z" fill="#4a90a4" opacity="0.5"/>
+
+  <!-- Falcon Wing Lines - Right -->
+  <path d="M420 256 L472 220 L452 256 L472 292 Z" fill="#4a90a4" opacity="0.8"/>
+  <path d="M452 230 L492 210 L477 240 L492 260 Z" fill="#4a90a4" opacity="0.5"/>
+  <path d="M452 282 L492 302 L477 272 L492 252 Z" fill="#4a90a4" opacity="0.5"/>
+
+  <!-- Target Lines - Top -->
+  <line x1="256" y1="85" x2="256" y2="50" stroke="#4a90a4" stroke-width="4" stroke-linecap="round"/>
+  <line x1="256" y1="55" x2="256" y2="40" stroke="#e94560" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Target Lines - Bottom -->
+  <line x1="256" y1="427" x2="256" y2="462" stroke="#4a90a4" stroke-width="4" stroke-linecap="round"/>
+  <line x1="256" y1="457" x2="256" y2="472" stroke="#e94560" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Scan Lines -->
+  <line x1="160" y1="150" x2="130" y2="120" stroke="#4a90a4" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="352" y1="150" x2="382" y2="120" stroke="#4a90a4" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="160" y1="362" x2="130" y2="392" stroke="#4a90a4" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="352" y1="362" x2="382" y2="392" stroke="#4a90a4" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+</svg>

@@ -23,22 +23,22 @@ internal class MessageStackTraceCapturer(
     HandlerThread(THREAD_NAME) {
 
     companion object {
-        //线程名
+        // 线程名
         private const val THREAD_NAME = "com.xenonbyte:MessageStackTraceCapturer"
 
-        //采集因子
+        // 采集因子
         private const val CAPTURE_FACTOR = 0.8
     }
 
-    //堆栈采集线程是否启动
+    // 堆栈采集线程是否启动
     private val threadStarted = AtomicBoolean(false)
 
-    //堆栈采集阈值
+    // 堆栈采集阈值
     private val captureThreshold = (slowRunnableThreshold * CAPTURE_FACTOR).toLong()
 
-    //堆栈采集任务
+    // 堆栈采集任务
     private val captureTask = Runnable {
-        val stackTrace = FalconUtils.stackTraceToString(Looper.getMainLooper().thread.stackTrace)
+        val stackTrace = FalconUtils.captureStackTrace(Looper.getMainLooper().thread)
         val messageSamplingData = messageSamplingModel.getCurrentSamplingData()
         messageSamplingData?.apply {
             setMainStackTrace(stackTrace)
@@ -48,7 +48,7 @@ internal class MessageStackTraceCapturer(
         }
     }
 
-    //堆栈采集Handler
+    // 堆栈采集Handler
     private var captureHandler: Handler? = null
 
     /**
@@ -69,21 +69,21 @@ internal class MessageStackTraceCapturer(
      * @param isSamplingThread 是否是消息采样线程
      */
     fun scheduleCapture(isSamplingThread: (currentThread: Thread) -> Boolean) {
-        //非消息采样线程不处理
+        // 非消息采样线程不处理
         if (!isSamplingThread.invoke(currentThread())) {
             return
         }
-        //堆栈抓取线程未启动
+        // 堆栈抓取线程未启动
         if (!isStarted()) {
             return
         }
         captureHandler ?: run {
-            //堆栈采集线程未创建Looper
+            // 堆栈采集线程未创建Looper
             if (looper == null) return
             captureHandler = Handler(looper)
         }
-        //尝试堆栈采集
-        //如果该消息是慢任务，延迟抓取并不会丢失慢任务堆栈，它发生在慢任务结束之前
+        // 尝试堆栈采集
+        // 如果该消息是慢任务，延迟抓取并不会丢失慢任务堆栈，它发生在慢任务结束之前
         captureHandler?.removeCallbacks(captureTask)
         captureHandler?.postDelayed(captureTask, captureThreshold)
     }
@@ -96,15 +96,22 @@ internal class MessageStackTraceCapturer(
      * @param isSamplingThread 是否是消息采样线程
      */
     fun cancelCapture(isSamplingThread: (currentThread: Thread) -> Boolean) {
-        //非消息采样线程不处理
+        // 非消息采样线程不处理
         if (!isSamplingThread.invoke(currentThread())) {
             return
         }
-        //堆栈采集线程未启动
+        // 堆栈采集线程未启动
         if (!isStarted() || !isAlive) {
             return
         }
-        //取消堆栈采集任务
+        // 取消堆栈采集任务
+        captureHandler?.removeCallbacks(captureTask)
+    }
+
+    /**
+     * 取消所有待执行的堆栈采集任务
+     */
+    fun cancelAllCaptures() {
         captureHandler?.removeCallbacks(captureTask)
     }
 
@@ -114,5 +121,4 @@ internal class MessageStackTraceCapturer(
     private fun isStarted(): Boolean {
         return threadStarted.get() && isAlive
     }
-
 }

@@ -28,12 +28,29 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
+
+    // 测试配置
+    testOptions {
+        unitTests.returnDefaultValues = true
+        unitTests.all {
+            useJUnitPlatform()
+        }
+    }
 }
 
 dependencies {
     implementation libs.androidx.appcompat
-    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.cardview
     implementation libs.xenonbyte.activitywatcher
     implementation project(':falcon')
     implementation project(':falcon-dump-ext')
+
+    testImplementation libs.mockk
+    testImplementation libs.junit.jupiter
+    testImplementation libs.kotlinx.coroutines.test
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.androidx.test.espresso
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.rules
 }

@@ -26,17 +26,19 @@ public class SampleApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        //创建监控配置
+        // 创建监控配置
         FalconConfig config = new FalconConfig.Builder()
-                //设置Anr触发阈值
+                // 设置 Anr 触发阈值
                 .setAnrThreshold(3000L, 5000L)
-                //设置慢任务触发阈值
+                // 设置慢任务触发阈值
                 .setSlowRunnableThreshold(500L)
-                //设置日志输出级别
+                // 设置采样率 (80% 采样，平衡性能和精度)
+                .setSamplingRate(0.8f)
+                // 设置日志输出级别
                 .setLogLevel(LogLevel.WARN)
-                //开启数据分析
+                // 开启数据分析
                 .setHprofDumpEnabled(true)
-                //设置事件监听
+                // 设置事件监听
                 .setEventListener(new FalconEventListener() {
 
                     @Override

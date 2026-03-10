@@ -15,7 +15,7 @@ internal class AnrBombThread : HandlerThread(THREAD_NAME) {
         private const val THREAD_NAME = "com.xenonbyte:AnrBombThread"
     }
 
-    //Anr炸弹线程是否启动
+    // Anr炸弹线程是否启动
     private val mThreadStarted = AtomicBoolean(false)
 
     /**
@@ -54,5 +54,4 @@ internal class AnrBombThread : HandlerThread(THREAD_NAME) {
     private fun isStarted(): Boolean {
         return mThreadStarted.get()
     }
-
 }

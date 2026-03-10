@@ -3,4 +3,27 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.android.library) apply false
+    id("io.gitlab.arturbosch.detekt") version "1.23.4" apply false
+}
+
+allprojects {
+    apply plugin: 'io.gitlab.arturbosch.detekt'
+
+    detekt {
+        buildUponDefaultConfig = true
+        allRules = false
+        config = files("$rootDir/detekt.yml")
+        def baselineFile = file("$rootDir/detekt-baseline.xml")
+        if (baselineFile.exists()) {
+            baseline = baselineFile
+        }
+    }
+
+    dependencies {
+        detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.4")
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }

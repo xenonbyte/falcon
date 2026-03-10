@@ -50,15 +50,15 @@ const val KEY_DUMPER_ERROR = "error"
  * @return 转储数据[JSONObject]实例
  */
 fun Dumper<*>.collectDataToJson(app: Application): JSONObject {
-    return JSONObject().apply {
-        try {
+    return try {
+        JSONObject().apply {
             put(KEY_DUMPER_NAME, name)
-            put(KEY_DUMPER_DATA, collectData(app))
-        } catch (e: Exception) {
-            JSONObject().apply {
-                put(KEY_DUMPER_NAME, name)
-                put(KEY_DUMPER_ERROR, "collect data failed: ${e.message}")
-            }
+            put(KEY_DUMPER_DATA, collectData(app).toJson())
+        }
+    } catch (e: Exception) {
+        JSONObject().apply {
+            put(KEY_DUMPER_NAME, name)
+            put(KEY_DUMPER_ERROR, "collect data failed: ${e.message}")
         }
     }
 }
