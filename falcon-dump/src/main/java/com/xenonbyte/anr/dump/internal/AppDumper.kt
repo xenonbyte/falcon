@@ -25,8 +25,7 @@ class AppDumper : Dumper<AppData>("AppDumper") {
                     it.versionCode.toLong()
                 }
             }
-        } catch (e: Exception) {
-
+        } catch (ignored: Exception) {
         }
         return AppData(versionName, versionCode, packageName)
     }

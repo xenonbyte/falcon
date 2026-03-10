@@ -7,6 +7,7 @@ import org.json.JSONObject
  *
  * @author xubo
  */
+@Suppress("LongParameterList")
 class DeviceData(
     val brand: String,
     val board: String,
