@@ -136,6 +136,13 @@ override fun onAnr(
 }
 ```
 
+`FalconDumpPayload` 的几个核心行为约定：
+
+- `FalconDumpPayload.parse(hprofData)` 本身不会抛异常；如果原始 JSON 非法，会返回一个带 `__payload_parse_error__` 条目的 payload，可通过 `hasErrors()` / `entries` 检查
+- `find(name)` / `require(name)` 适合直接读取原始 Dumper 条目；`decode(name) { ... }` 适合做宽松解析，缺失或失败时返回 `null`
+- `requireDecoded(name) { ... }` 以及 `requireStableAppData()` / `requireDeviceData()` 这类 helper 属于 fail-fast 读取：不仅要求条目存在且采集成功，还会在字段缺失或类型不匹配时直接抛异常，用于尽早暴露 schema 漂移或 payload 截断
+- `stableAppData()` / `stableMemoryData()` / `stableThreadData()` 和扩展库的 `deviceData()` / `batteryData()` 等 nullable accessor 更适合常规业务读取链路
+
 `appData()` / `memoryData()` / `threadData()` 仍然保留兼容，但它们返回的是 `com.xenonbyte.anr.dump.internal` 命名空间下的历史模型，现已标记为 deprecated，新接入不建议继续依赖。
 
 如果某个 Dumper 结果在你的链路里属于必填，可以直接使用 `requireStableAppData()`、`requireStableMemoryData()`、`requireDeviceData()` 这类 helper，在缺失或采集失败时尽早显式暴露问题。

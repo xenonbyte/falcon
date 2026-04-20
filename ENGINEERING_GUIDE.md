@@ -98,6 +98,8 @@ Falcon.stopMonitoring()
 - `Falcon.getHealthState()` 适合业务代码做结构化判断，`Falcon.getHealthStatus()` 更适合日志/调试输出
 - `hprofData` 是历史命名，实际内容为 Dumper 聚合后的 JSON 字符串
 - 推荐使用 `FalconDumpPayload.parse(hprofData)` 解析 Dumper 输出；对于内置 Dumper，优先使用 `stableAppData()`、`stableMemoryData()`、`stableThreadData()` 这些稳定公开模型 accessor；旧的 `appData()` / `memoryData()` / `threadData()` 仅作兼容并已标记为 deprecated；扩展 Dumper 继续使用 `deviceData()`、`batteryData()` 等 accessor
+- `FalconDumpPayload.parse(...)` 本身不会抛异常；如果原始 payload 非法，会返回一个带错误条目的 payload，可通过 `hasErrors()` / `entries` 判断
+- `decode(name) { ... }` 与 nullable accessor 适合宽松读取；`requireDecoded(...)` 与 `requireStableAppData()` / `requireDeviceData()` 这类 helper 属于 fail-fast 读取，在字段缺失、类型不匹配或条目失败时会直接抛异常
 - 如果某项 Dumper 数据在业务上属于必填，可以使用 `requireStableAppData()`、`requireStableMemoryData()`、`requireDeviceData()` 等 helper，在缺失或采集失败时直接抛出异常
 - 如果不想在每个回调里手动 parse，可直接继承 `FalconDumpPayloadEventAdapter`，让回调参数直接收到 `FalconDumpPayload`
 
