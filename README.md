@@ -274,7 +274,7 @@ class FdData(
 | **setLogPrinter** | LogPrinter | DefaultLogPrinter (`android.util.Log`) | 日志打印器 |
 | **setMessageSamplingMaxCacheSize** | Int | 30 | 采样消息最大缓存量        |
 | **addEventDumper** | FalconEvent, Dumper | 无 | 添加指定事件的数据转储器     |
-| **setHprofDumpEnabled** | Boolean | true | 控制是否执行 Dumper 数据采集；名称保留自历史版本 |
+| **setHprofDumpEnabled** | Boolean | true | 控制是否执行 Dumper 数据采集；历史命名，保留兼容 |
 | **setDumpCollectionEnabled** | Boolean | true | `setHprofDumpEnabled` 的语义化别名，推荐优先使用 |
 
 ### 采样率说明
@@ -362,7 +362,7 @@ val config = FalconConfig.Builder()
     .setSlowRunnableThreshold(500L)     // 平衡性能
     .setMessageSamplingMaxCacheSize(30) // 控制内存
     .setLogLevel(LogLevel.WARN)         // 仅重要日志
-    .setHprofDumpEnabled(isHighEndDevice()) // 按设备能力控制 Dumper 采集
+    .setDumpCollectionEnabled(isHighEndDevice()) // 按设备能力控制 Dumper 采集
     .build()
 ```
 

@@ -181,9 +181,10 @@ val healthCheckHandler = Handler(Looper.getMainLooper())
 
 healthCheckHandler.post(object : Runnable {
     override fun run() {
+        val healthState = Falcon.getHealthState()
         val healthStatus = Falcon.getHealthStatus()
 
-        if (healthStatus.contains("DEGRADED")) {
+        if (healthState == FalconHealthState.DEGRADED) {
             // 上报健康问题
             reportHealthIssue(healthStatus)
 
@@ -213,7 +214,7 @@ object FalconConfigFactory {
             // 日志级别：仅记录错误和警告
             .setLogLevel(LogLevel.WARN)
             // 按设备能力控制 Dumper 数据采集
-            .setHprofDumpEnabled(isHighEndDevice(context))
+            .setDumpCollectionEnabled(isHighEndDevice(context))
             // 自定义日志打印器（集成到现有日志系统）
             .setLogPrinter(CustomLogPrinter())
             .build()
@@ -226,7 +227,7 @@ object FalconConfigFactory {
             .setSlowRunnableThreshold(100L)
             .setMessageSamplingMaxCacheSize(50)
             .setLogLevel(LogLevel.DEBUG)
-            .setHprofDumpEnabled(true)
+            .setDumpCollectionEnabled(true)
             .build()
     }
 
@@ -268,7 +269,7 @@ config.setMessageSamplingMaxCacheSize(cacheSize)
 
 ### 2. CPU优化
 
-- 低端设备可以关闭 Dumper 数据采集（`setHprofDumpEnabled(false)`）
+- 低端设备可以关闭 Dumper 数据采集（`setDumpCollectionEnabled(false)`）
 - 慢任务阈值不要设置过低（建议≥300ms）
 - 避免在回调中执行耗时操作
 
@@ -341,7 +342,7 @@ Log.d("Falcon", health)
 
 2. 关闭 Dumper 数据采集
 ```kotlin
-.setHprofDumpEnabled(false)
+.setDumpCollectionEnabled(false)
 ```
 
 3. 定期清理数据
