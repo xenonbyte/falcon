@@ -27,7 +27,7 @@ dependencies {
     implementation 'com.github.xenonbyte:falcon:2.0.0'
 
     // 可选：扩展数据采集器
-    implementation 'com.github.xenonbyte:dumper-ext:1.0.0'
+    implementation 'com.github.xenonbyte:dumper-ext:1.0.1'
 }
 ```
 

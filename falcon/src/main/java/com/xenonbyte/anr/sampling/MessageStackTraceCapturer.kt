@@ -5,6 +5,8 @@ import android.os.HandlerThread
 import android.os.Looper
 import com.xenonbyte.anr.FalconUtils
 import com.xenonbyte.anr.LogLevel
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -18,7 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class MessageStackTraceCapturer(
     private val messageSamplingModel: MessageSamplingModel,
-    private val slowRunnableThreshold: Long
+    private val slowRunnableThreshold: Long,
+    private val stackTraceProvider: () -> String = {
+        FalconUtils.captureStackTrace(Looper.getMainLooper().thread)
+    }
 ) :
     HandlerThread(THREAD_NAME) {
 
@@ -28,6 +33,9 @@ internal class MessageStackTraceCapturer(
 
         // 采集因子
         private const val CAPTURE_FACTOR = 0.8
+
+        // 等待已进入执行阶段的抓栈任务完成，避免慢任务结束时冻结空堆栈
+        private const val CAPTURE_DRAIN_TIMEOUT_MS = 300L
     }
 
     // 堆栈采集线程是否启动
@@ -38,7 +46,7 @@ internal class MessageStackTraceCapturer(
 
     // 堆栈采集任务
     private val captureTask = Runnable {
-        val stackTrace = FalconUtils.captureStackTrace(Looper.getMainLooper().thread)
+        val stackTrace = stackTraceProvider()
         val messageSamplingData = messageSamplingModel.getCurrentSamplingData()
         messageSamplingData?.apply {
             setMainStackTrace(stackTrace)
@@ -96,6 +104,16 @@ internal class MessageStackTraceCapturer(
      * @param isSamplingThread 是否是消息采样线程
      */
     fun cancelCapture(isSamplingThread: (currentThread: Thread) -> Boolean) {
+        cancelCapture(isSamplingThread = isSamplingThread, awaitInFlightCapture = false)
+    }
+
+    /**
+     * 取消堆栈采集任务，并可选等待已进入执行阶段的抓栈任务完成。
+     */
+    fun cancelCapture(
+        isSamplingThread: (currentThread: Thread) -> Boolean,
+        awaitInFlightCapture: Boolean
+    ) {
         // 非消息采样线程不处理
         if (!isSamplingThread.invoke(currentThread())) {
             return
@@ -106,6 +124,9 @@ internal class MessageStackTraceCapturer(
         }
         // 取消堆栈采集任务
         captureHandler?.removeCallbacks(captureTask)
+        if (awaitInFlightCapture) {
+            awaitCaptureDrain()
+        }
     }
 
     /**
@@ -120,5 +141,27 @@ internal class MessageStackTraceCapturer(
      */
     private fun isStarted(): Boolean {
         return threadStarted.get() && isAlive
+    }
+
+    /**
+     * 指定执行时长是否已经进入抓栈窗口。
+     *
+     * 当消息时长达到抓栈阈值后，结束采样时需要等待抓栈线程排空，以便拿到最终堆栈。
+     */
+    fun captureCouldBeInFlight(duration: Long): Boolean {
+        return duration >= captureThreshold
+    }
+
+    private fun awaitCaptureDrain() {
+        val handler = captureHandler ?: return
+        val latch = CountDownLatch(1)
+        if (!handler.post { latch.countDown() }) {
+            return
+        }
+        if (!latch.await(CAPTURE_DRAIN_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+            FalconUtils.log(LogLevel.WARN) {
+                "MessageStackTraceCapturer timed out waiting for in-flight capture to drain"
+            }
+        }
     }
 }

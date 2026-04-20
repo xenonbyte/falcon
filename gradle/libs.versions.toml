@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.3"
+agp = "8.9.1"
 kotlin = "2.0.0"
 appcompat = "1.7.0"
 constraintlayout = "2.1.4"
@@ -8,7 +8,7 @@ annotation = "1.4.0"
 objectpool = "2.0.0"
 activitywatcher = "1.0.3"
 target-sdk = "35"
-compile-sdk = "35"
+compile-sdk = "36"
 min-sdk = "21"
 
 junit = "4.13.2"

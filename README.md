@@ -188,7 +188,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.xenonbyte:dumper-ext:1.0.0'
+    implementation 'com.github.xenonbyte:dumper-ext:1.0.1'
 }
 ```
 

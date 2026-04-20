@@ -2,8 +2,13 @@ package com.xenonbyte.anr.sampling
 
 import com.github.xenonbyte.ObjectPoolStore
 import com.github.xenonbyte.ObjectPoolStoreOwner
+import com.xenonbyte.anr.data.MessageData
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -147,5 +152,49 @@ class MessageStackTraceCapturerTest {
         capturer.join(1000)
 
         assertFalse("停止后线程不应该存活", capturer.isAlive)
+    }
+
+    @Test
+    fun `cancelCapture在抓栈已开始时应该等待堆栈写回`() {
+        val captureStarted = CountDownLatch(1)
+        val releaseCapture = CountDownLatch(1)
+        val cancelReturned = CountDownLatch(1)
+        capturer = MessageStackTraceCapturer(
+            messageSamplingModel = samplingModel,
+            slowRunnableThreshold = 1L,
+            stackTraceProvider = {
+                captureStarted.countDown()
+                releaseCapture.await(1, TimeUnit.SECONDS)
+                "captured-stack"
+            }
+        )
+        capturer.startCapturing()
+        capturer.join(1000)
+
+        samplingModel.handleMessageData(
+            MessageData(
+                ">>>>> Dispatching to Handler (test) {1} 0x1",
+                100L
+            )
+        ) { true }
+        capturer.scheduleCapture { true }
+        assertTrue("抓栈任务应该已经开始", captureStarted.await(1, TimeUnit.SECONDS))
+
+        val cancelThread = Thread {
+            capturer.cancelCapture(
+                isSamplingThread = { true },
+                awaitInFlightCapture = true
+            )
+            cancelReturned.countDown()
+        }
+        cancelThread.start()
+
+        assertFalse("cancelCapture 不应该在抓栈完成前返回", cancelReturned.await(100, TimeUnit.MILLISECONDS))
+
+        releaseCapture.countDown()
+        cancelThread.join(1000)
+
+        assertTrue("cancelCapture 应该在抓栈完成后返回", cancelReturned.await(1, TimeUnit.SECONDS))
+        assertEquals("captured-stack", samplingModel.getCurrentSamplingData()?.getStackTrace())
     }
 }

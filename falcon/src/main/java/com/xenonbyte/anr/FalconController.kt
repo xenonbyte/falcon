@@ -168,9 +168,13 @@ internal class FalconController(
                 }
             } else if (data.getStatus() == SamplingStatus.END) { // 采样结束消息
                 // 取消堆栈采集任务
-                messageStackTraceCapturer?.cancelCapture {
-                    it == messageSamplingThread
-                }
+                val stackTraceCapturer = messageStackTraceCapturer
+                stackTraceCapturer?.cancelCapture(
+                    isSamplingThread = {
+                        it == messageSamplingThread
+                    },
+                    awaitInFlightCapture = stackTraceCapturer.captureCouldBeInFlight(data.getDuration())
+                )
                 if (data.getDuration() >= slowMessageThreshold) {
                     val slowRunnableData = data.snapshot()
                     // 慢任务回调处理
