@@ -5,8 +5,8 @@ appcompat = "1.7.0"
 constraintlayout = "2.1.4"
 cardview = "1.0.0"
 annotation = "1.4.0"
-objectpool = "1.0.0"
-activitywatcher = "1.0.2"
+objectpool = "2.0.0"
+activitywatcher = "1.0.3"
 target-sdk = "35"
 compile-sdk = "35"
 min-sdk = "21"
@@ -45,4 +45,3 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-

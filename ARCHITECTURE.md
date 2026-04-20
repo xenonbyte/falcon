@@ -120,31 +120,22 @@ class Falcon private constructor() {
 
 ### 3. MessageSamplingThread (消息采样器)
 
-**职责**: 采集主线程消息信息
+**职责**: 在专用线程上接收和处理主线程消息采样事件
 
 **工作原理**:
 1. 接收 `setMessageLogging` 回调
-2. 解析消息开始/结束标识
-3. 生成采样数据
-4. 通过队列传递给处理线程
+2. 对单次主线程 dispatch 做成对采样决策，避免 `START` / `END` 被随机拆散
+3. 将采样消息入队，交给采样模型配对和落盘
+4. 在空闲时主动让出 CPU，长时间空闲后 `park`
 
 **实现细节**:
 ```kotlin
-override fun dispatchMessage(message: String) {
-    // 解析消息类型
-    val startTime = parseStartTime(message)
+fun dispatchMessage(message: String?) {
+    if (message == null || !isStarted()) return
+    if (Thread.currentThread() !== Looper.getMainLooper().thread) return
+    if (!shouldSampleMessage(message)) return
 
-    // 创建消息数据
-    val messageData = MessageData(
-        message = message,
-        timestamp = startTime
-    )
-
-    // 加入队列
-    messageDataQueue.offer(messageData)
-
-    // 唤醒处理线程
-    LockSupport.unpark(this)
+    addMessageData(message, FalconTimestamp.currentTimeMillis())
 }
 ```
 
@@ -233,16 +224,22 @@ Application.onCreate
     │
     ├─> Falcon.initialize(app, config)
     │       │
-    │       └─> FalconController.init()
+    │       └─> Falcon.init()
     │               │
     │               ├─> ActivityWatcher.initialize()
-    │               ├─> MessageSamplingThread.startSampling()
-    │               ├─> MessageStackTraceCapturer.startCapturing()
-    │               └─> AnrBombThread.startBombSpace()
+    │               ├─> create FalconController
+    │               └─> set listener / logger
     │
     └─> Falcon.startMonitoring()
             │
-            └─> Looper.setMessageLogging()
+            └─> FalconController.start()
+                    │
+                    ├─> ensureRealtimeComponents()
+                    │       ├─> MessageSamplingThread.startSampling()
+                    │       ├─> MessageStackTraceCapturer.startCapturing()
+                    │       └─> AnrBombThread.startBombSpace()
+                    │
+                    └─> Looper.setMessageLogging()
 ```
 
 ### 消息采样流程
@@ -259,7 +256,7 @@ Main Thread Message
     │       └─> MessageSamplingThread.run()
     │               │
     │               ├─> poll message data
-    │               ├─> MessageSamplingModel.addData()
+    │               ├─> MessageSamplingModel.handleMessageData()
     │               ├─> notify sampling listener
     │               │
     │               └─> FalconController.onSampling()
@@ -273,7 +270,7 @@ Main Thread Message
     │
     └─> Message End
             │
-            └─> AnrBattlefield.cancel()
+            └─> main-thread defuse task tries to cancel bomb
 ```
 
 ### ANR检测流程
@@ -353,7 +350,7 @@ Slow Runnable Event
     │
     ├─> FalconController.onSampling()
     │       │
-    │       ├─> dump hprof data
+    │       ├─> collect dumper JSON
     │       ├─> execute on thread pool
     │       └─> listener.onSlowRunnable()
     │               │
@@ -368,8 +365,8 @@ ANR Event
     ├─> FalconController.onAnrBombExplosion()
     │       │
     │       ├─> capture stack trace
-    │       ├─> get sampling data deque
-    │       ├─> dump hprof data
+    │       ├─> snapshot current sampling data / history deque
+    │       ├─> collect dumper JSON
     │       ├─> execute on thread pool
     │       └─> listener.onAnr()
     │               │
@@ -385,7 +382,8 @@ ANR Event
 | 线程名 | 用途 | 类型 | 优先级 |
 |--------|------|------|--------|
 | Main Thread | 主线程 | UI线程 | Normal |
-| MessageSamplingThread | 消息采样和数据处理 | HandlerThread | Normal |
+| MessageSamplingThread | 消息采样和数据处理 | 专用 `Thread` | Normal |
+| MessageStackTraceCapturer | 慢任务堆栈捕获 | `HandlerThread` | Normal |
 | AnrBombThread | ANR炸弹任务 | HandlerThread | Normal |
 | FalconEventThread | 事件回调执行 | ThreadPoolExecutor | Normal |
 
@@ -411,6 +409,12 @@ MessageSamplingThread
     ├─> notify controller (同步)
     │
     └─> LockSupport.park() (等待)
+
+MessageStackTraceCapturer
+    │
+    ├─> schedule delayed capture (异步)
+    │
+    └─> capture main-thread stack when threshold reached
 
 AnrBombThread
     │
@@ -443,10 +447,9 @@ FalconEventThread
 3. 对象池复用（ObjectPoolStore）
 4. 及时清理资源
 
-**内存占用**:
-- 基础: ~1MB
-- 30条消息: ~2-3MB
-- 50条消息: ~3-5MB
+**说明**:
+- 当前仓库未附带按设备分层的内存压测报告
+- 实际占用与消息缓存大小、对象池复用情况以及 Dumper 输出内容强相关
 
 ### CPU优化
 
@@ -456,10 +459,10 @@ FalconEventThread
 3. 最小化同步操作
 4. 使用CAS替代锁
 
-**性能指标**:
-- 消息采样开销: < 0.1ms
-- CPU占用率: < 1%
-- 电池消耗: 可忽略
+**说明**:
+- 当前仓库未附带可复现 benchmark 报告
+- 性能表现主要受 `samplingRate`、缓存大小和 Dumper 实现影响
+- 对外文档应以实测数据为准，不在架构文档中固化具体数值
 
 ### I/O优化
 

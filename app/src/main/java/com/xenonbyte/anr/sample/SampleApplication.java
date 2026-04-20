@@ -7,78 +7,84 @@ import androidx.annotation.Nullable;
 
 import com.xenonbyte.anr.Falcon;
 import com.xenonbyte.anr.FalconConfig;
+import com.xenonbyte.anr.FalconDumpPayloadEventAdapter;
 import com.xenonbyte.anr.FalconEvent;
-import com.xenonbyte.anr.FalconEventListener;
 import com.xenonbyte.anr.LogLevel;
 import com.xenonbyte.anr.data.MessageSamplingData;
 import com.xenonbyte.anr.dump.ActivityDumper;
 import com.xenonbyte.anr.dump.BatteryDumper;
 import com.xenonbyte.anr.dump.DeviceDumper;
+import com.xenonbyte.anr.dump.FalconAppDumper;
+import com.xenonbyte.anr.dump.FalconDumpPayload;
+import com.xenonbyte.anr.dump.FalconMemoryDumper;
+import com.xenonbyte.anr.dump.FalconThreadDumper;
 import com.xenonbyte.anr.dump.FdDumper;
-import com.xenonbyte.anr.dump.internal.AppDumper;
-import com.xenonbyte.anr.dump.internal.MemoryDumper;
-import com.xenonbyte.anr.dump.internal.ThreadDumper;
 
 import java.util.Deque;
 
-
 public class SampleApplication extends Application {
+
     @Override
     public void onCreate() {
         super.onCreate();
-        // 创建监控配置
+        SampleEventStore.get().clear();
+
         FalconConfig config = new FalconConfig.Builder()
-                // 设置 Anr 触发阈值
                 .setAnrThreshold(3000L, 5000L)
-                // 设置慢任务触发阈值
                 .setSlowRunnableThreshold(500L)
-                // 设置采样率 (80% 采样，平衡性能和精度)
-                .setSamplingRate(0.8f)
-                // 设置日志输出级别
+                .setSamplingRate(1.0f)
                 .setLogLevel(LogLevel.WARN)
-                // 开启数据分析
-                .setHprofDumpEnabled(true)
-                // 设置事件监听
-                .setEventListener(new FalconEventListener() {
-
+                .setDumpCollectionEnabled(true)
+                .setEventListener(new FalconDumpPayloadEventAdapter() {
                     @Override
-                    public void onSlowRunnable(long currentTimestamp, @NonNull String mainStackTrace, @NonNull MessageSamplingData messageSamplingData, @NonNull String hprofData) {
-                        //慢任务回调(非主线程)
+                    public void onSlowRunnable(
+                            long currentTimestamp,
+                            @NonNull String mainStackTrace,
+                            @NonNull MessageSamplingData messageSamplingData,
+                            @NonNull FalconDumpPayload dumpPayload
+                    ) {
+                        SampleEventStore.get().record(
+                                SampleFalconEvent.fromSlowRunnable(
+                                        currentTimestamp,
+                                        messageSamplingData,
+                                        dumpPayload
+                                )
+                        );
                     }
 
                     @Override
-                    public void onAnr(long currentTimestamp, @NonNull String mainStackTrace, @Nullable MessageSamplingData messageSamplingData, @NonNull Deque<MessageSamplingData> messageSamplingDataDeque, @NonNull String hprofData) {
-                        //ANR回调(非主线程)
+                    public void onAnr(
+                            long currentTimestamp,
+                            @NonNull String mainStackTrace,
+                            @Nullable MessageSamplingData messageSamplingData,
+                            @NonNull Deque<MessageSamplingData> messageSamplingDataDeque,
+                            @NonNull FalconDumpPayload dumpPayload
+                    ) {
+                        SampleEventStore.get().record(
+                                SampleFalconEvent.fromAnr(
+                                        currentTimestamp,
+                                        messageSamplingData,
+                                        messageSamplingDataDeque.size(),
+                                        dumpPayload
+                                )
+                        );
                     }
-
                 })
-                //Anr事件添加应用数据dumper
-                .addEventDumper(FalconEvent.ANR_EVENT, new AppDumper())
-                //Anr事件添加Activity堆栈dumper
+                .addEventDumper(FalconEvent.ANR_EVENT, new FalconAppDumper())
                 .addEventDumper(FalconEvent.ANR_EVENT, new ActivityDumper())
-                //Anr事件添加电池数据dumper
                 .addEventDumper(FalconEvent.ANR_EVENT, new BatteryDumper())
-                //Anr事件添加设备数据dumper
                 .addEventDumper(FalconEvent.ANR_EVENT, new DeviceDumper())
-                //Anr事件添加Fd数据dumper
                 .addEventDumper(FalconEvent.ANR_EVENT, new FdDumper())
-                //Anr事件添加内存数据dumper
-                .addEventDumper(FalconEvent.ANR_EVENT, new MemoryDumper())
-                //Anr事件添加线程数据dumper
-                .addEventDumper(FalconEvent.ANR_EVENT, new ThreadDumper())
-                //慢任务事件添加内存数据dumper
-                .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new MemoryDumper())
-                //慢任务事件添加设备数据dumper
+                .addEventDumper(FalconEvent.ANR_EVENT, new FalconMemoryDumper())
+                .addEventDumper(FalconEvent.ANR_EVENT, new FalconThreadDumper())
+                .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new FalconAppDumper())
+                .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new FalconMemoryDumper())
                 .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new DeviceDumper())
-                //慢任务事件添加电池数据dumper
                 .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new BatteryDumper())
-                //慢任务事件添加线程数据dumper
-                .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new ThreadDumper())
-                //构建配置
+                .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new FalconThreadDumper())
                 .build();
-        //初始化
+
         Falcon.initialize(this, config);
-        //开启监测
         Falcon.startMonitoring();
     }
 }

@@ -12,10 +12,10 @@ class BatteryData(
     val chargingStatus: String
 ) : DumpData {
     companion object {
-        //电池电量
+        // 电池电量
         const val CAPACITY = "capacity"
 
-        //充电状态
+        // 充电状态
         const val CHARGING_STATUS = "charging_status"
     }
 

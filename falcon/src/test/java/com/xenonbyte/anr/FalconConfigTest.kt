@@ -27,6 +27,7 @@ class FalconConfigTest {
         assertEquals(30, config.messageSamplingMaxCacheSize)
         assertEquals(LogLevel.WARN, config.logLevel)
         assertTrue(config.hprofDumpEnabled)
+        assertTrue(config.dumpCollectionEnabled)
         assertEquals(1.0f, config.samplingRate)
     }
 
@@ -68,6 +69,7 @@ class FalconConfigTest {
         assertEquals(0.5f, config.samplingRate)
         assertEquals(LogLevel.DEBUG, config.logLevel)
         assertFalse(config.hprofDumpEnabled)
+        assertFalse(config.dumpCollectionEnabled)
         assertEquals(listener, config.listener)
     }
 
@@ -147,6 +149,17 @@ class FalconConfigTest {
         assertEquals(40, config.messageSamplingMaxCacheSize)
         assertEquals(LogLevel.NONE, config.logLevel)
         assertFalse(config.hprofDumpEnabled)
+        assertFalse(config.dumpCollectionEnabled)
+    }
+
+    @Test
+    fun `Dumper数据采集开关别名应该正确保存`() {
+        val config = FalconConfig.Builder()
+            .setDumpCollectionEnabled(false)
+            .build()
+
+        assertFalse(config.hprofDumpEnabled)
+        assertFalse(config.dumpCollectionEnabled)
     }
 
     @Test

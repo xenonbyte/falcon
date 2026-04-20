@@ -21,11 +21,11 @@ abstract class Dumper<out T : DumpData>(val name: String) {
     abstract fun collectData(app: Application): T
 
     override fun equals(other: Any?): Boolean {
-        //比较地址
+        // 比较地址
         if (this === other) return true
-        //比较类型
+        // 比较类型
         if (other == null || other::class != this::class) return false
-        //比较name
+        // 比较 name
         return name == (other as Dumper<*>).name
     }
 
@@ -34,13 +34,13 @@ abstract class Dumper<out T : DumpData>(val name: String) {
     override fun toString() = "Dumper(name='$name')"
 }
 
-//转储器名key
+// 转储器名 key
 const val KEY_DUMPER_NAME = "name"
 
-//转储器数据key
+// 转储器数据 key
 const val KEY_DUMPER_DATA = "data"
 
-//转储器错误key
+// 转储器错误 key
 const val KEY_DUMPER_ERROR = "error"
 
 /**

@@ -172,9 +172,10 @@ internal class FalconController(
                     it == messageSamplingThread
                 }
                 if (data.getDuration() >= slowMessageThreshold) {
+                    val slowRunnableData = data.snapshot()
                     // 慢任务回调处理
                     threadPool?.execute {
-                        handleSlowRunnable(data)
+                        handleSlowRunnable(slowRunnableData)
                     }
                 }
             }
@@ -212,11 +213,12 @@ internal class FalconController(
             val stackTrace = FalconUtils.captureStackTrace(Looper.getMainLooper().thread)
             val currentSamplingData = messageSamplingModel.getCurrentSamplingData()
             currentSamplingData?.takeIf { it.getStackTrace().isEmpty() }?.setMainStackTrace(stackTrace)
-            val messageSamplingDataDeque = messageSamplingModel.getSamplingDataDeque()
+            val currentSamplingDataSnapshot = currentSamplingData?.snapshot()
+            val messageSamplingDataDeque = messageSamplingModel.getSamplingDataDequeSnapshot()
 
             // Anr回调处理
             threadPool?.execute {
-                handleAnrCallback(stackTrace, currentSamplingData, messageSamplingDataDeque)
+                handleAnrCallback(stackTrace, currentSamplingDataSnapshot, messageSamplingDataDeque)
             }
         } catch (e: IllegalStateException) {
             handleIllegalState("onAnrBombExplosion", e)
@@ -310,6 +312,16 @@ internal class FalconController(
             Last Error Time: ${stats.lastErrorTime}
             Recent Errors: ${stats.recentErrors.joinToString("\n") { "[${it.timestamp}] ${it.error}" }}
         """.trimIndent()
+    }
+
+    /**
+     * 获取对外暴露的健康状态枚举。
+     */
+    fun getHealthState(): FalconHealthState {
+        return when (healthMonitor.getHealthStatus()) {
+            FalconHealthMonitor.HealthStatus.HEALTHY -> FalconHealthState.HEALTHY
+            FalconHealthMonitor.HealthStatus.DEGRADED -> FalconHealthState.DEGRADED
+        }
     }
 
     /**

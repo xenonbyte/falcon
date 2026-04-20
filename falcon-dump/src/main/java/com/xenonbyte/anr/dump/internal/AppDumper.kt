@@ -1,6 +1,7 @@
 package com.xenonbyte.anr.dump.internal
 
 import android.app.Application
+import android.content.pm.PackageInfo
 import android.os.Build
 import com.xenonbyte.anr.dump.Dumper
 
@@ -19,14 +20,19 @@ class AppDumper : Dumper<AppData>("AppDumper") {
             val packageInfo = app.packageManager.getPackageInfo(packageName, 0)
             packageInfo?.let {
                 versionName = it.versionName ?: ""
-                versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    it.longVersionCode
-                } else {
-                    it.versionCode.toLong()
-                }
+                versionCode = resolveVersionCode(it)
             }
         } catch (ignored: Exception) {
         }
         return AppData(versionName, versionCode, packageName)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun resolveVersionCode(packageInfo: PackageInfo): Long {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            packageInfo.versionCode.toLong()
+        }
     }
 }

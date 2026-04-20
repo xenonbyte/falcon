@@ -11,7 +11,7 @@ class FdData(
     val openFd: Int
 ) : DumpData {
     companion object {
-        //打开的文件描述符数
+        // 打开的文件描述符数
         const val OPEN_FD = "open_fd"
     }
 

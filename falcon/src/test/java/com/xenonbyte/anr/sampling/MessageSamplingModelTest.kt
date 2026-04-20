@@ -7,6 +7,9 @@ import com.xenonbyte.anr.data.SamplingStatus
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * MessageSamplingModel 单元测试
@@ -16,6 +19,8 @@ import org.junit.Test
  * 2. 采样数据缓存管理
  * 3. 线程安全访问
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], manifest = Config.NONE)
 class MessageSamplingModelTest {
 
     private lateinit var model: MessageSamplingModel
@@ -104,5 +109,53 @@ class MessageSamplingModelTest {
         val result = lowMemoryModel.handleMessageData(startMessage) { true }
 
         assertNotNull(result)
+    }
+
+    @Test
+    fun `已完成消息场景下获取采样队列应该返回最新记录`() {
+        val startTimestamp = System.currentTimeMillis()
+        model.handleMessageData(
+            MessageData(
+                ">>>>> Dispatching to Handler (com.example.MyHandler) {12345} 0x1",
+                startTimestamp
+            )
+        ) { true }
+        model.handleMessageData(
+            MessageData(
+                "<<<<< Finished to Handler (com.example.MyHandler) {12345} 0x1",
+                startTimestamp + 20
+            )
+        ) { true }
+
+        val deque = model.getSamplingDataDeque()
+
+        assertEquals(1, deque.size)
+        assertEquals(SamplingStatus.END, deque.first.getStatus())
+        assertEquals(20L, deque.first.getDuration())
+    }
+
+    @Test
+    fun `采样队列快照不应该被后续状态更新改写`() {
+        val startTimestamp = System.currentTimeMillis()
+        model.handleMessageData(
+            MessageData(
+                ">>>>> Dispatching to Handler (com.example.MyHandler) {12345} 0x1",
+                startTimestamp
+            )
+        ) { true }
+
+        val snapshotDeque = model.getSamplingDataDequeSnapshot()
+
+        model.handleMessageData(
+            MessageData(
+                "<<<<< Finished to Handler (com.example.MyHandler) {12345} 0x1",
+                startTimestamp + 50
+            )
+        ) { true }
+
+        val snapshot = snapshotDeque.first
+        assertEquals(SamplingStatus.START, snapshot.getStatus())
+        assertFalse(snapshot.getComplete())
+        assertEquals(-1L, snapshot.getDuration())
     }
 }

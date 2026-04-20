@@ -32,34 +32,34 @@ class MemoryData(
 ) : DumpData {
 
     companion object {
-        //当前应用Java堆最大可用内存
+        // 当前应用 Java 堆最大可用内存
         const val APP_MAX_MEMORY = "app_max_memory"
 
-        //当前应用Java堆已分配内存
+        // 当前应用 Java 堆已分配内存
         const val APP_TOTAL_MEMORY = "app_total_memory"
 
-        //当前应用Java堆空闲内存
+        // 当前应用 Java 堆空闲内存
         const val APP_FREE_MEMORY = "app_free_memory"
 
-        //当前应用native堆最大可用内存
+        // 当前应用 native 堆最大可用内存
         const val APP_NATIVE_HEAP_MAX_MEMORY = "app_native_heap_max_memory"
 
-        //当前应用native堆已分配内存
+        // 当前应用 native 堆已分配内存
         const val APP_NATIVE_HEAP_TOTAL_MEMORY = "app_native_heap_total_memory"
 
-        //当前应用native堆空闲内存
+        // 当前应用 native 堆空闲内存
         const val APP_NATIVE_HEAP_FREE_MEMORY = "app_native_heap_free_memory"
 
-        //设备最大内存
+        // 设备最大内存
         const val DEVICE_MAX_MEMORY = "device_max_memory"
 
-        //设备最大可用内存
+        // 设备最大可用内存
         const val DEVICE_FREE_MEMORY = "device_free_memory"
 
-        //设备内存不足阈值
+        // 设备内存不足阈值
         const val DEVICE_THRESHOLD_MEMORY = "device_threshold_memory"
 
-        //设备是否内存不足
+        // 设备是否内存不足
         const val DEVICE_LOW_MEMORY = "device_low_memory"
     }
 

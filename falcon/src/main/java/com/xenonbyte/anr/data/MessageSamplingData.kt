@@ -87,6 +87,23 @@ class MessageSamplingData private constructor(
     }
 
     /**
+     * 创建当前采样数据的快照，避免异步回调阶段读到后续被复用/改写的对象。
+     */
+    internal fun snapshot(): MessageSamplingData {
+        return MessageSamplingData(
+            id,
+            index,
+            message,
+            startTimestamp,
+            endTimestamp,
+            duration,
+            status,
+            complete,
+            stackTrace
+        )
+    }
+
+    /**
      * 获取采样数据索引
      *
      * @return 采样数据索引

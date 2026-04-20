@@ -25,20 +25,18 @@ class MemoryDumper : Dumper<MemoryData>("MemoryDumper") {
         var deviceThresholdMemory = 0L
         var deviceLowMemory = false
         val activityManager = app.getSystemService(ACTIVITY_SERVICE) as? ActivityManager
-        activityManager?.apply {
-            try {
-                val outInfo = ActivityManager.MemoryInfo()
-                getMemoryInfo(outInfo)
+        activityManager?.let { manager ->
+            runCatching {
+                ActivityManager.MemoryInfo().also(manager::getMemoryInfo)
+            }.getOrNull()?.let { outInfo ->
                 deviceMaxMemory = outInfo.totalMem
                 deviceFreeMemory = outInfo.availMem
                 deviceThresholdMemory = outInfo.threshold
                 deviceLowMemory = outInfo.lowMemory
-            } catch (e: Exception) {
-                println("Failed to get memory info from ActivityManager, Exception: ${e.message}")
             }
         }
 
-        val memoryData = MemoryData(
+        return MemoryData(
             appMaxMemory,
             appTotalMemory,
             appFreeMemory,
@@ -50,6 +48,5 @@ class MemoryDumper : Dumper<MemoryData>("MemoryDumper") {
             deviceThresholdMemory,
             deviceLowMemory
         )
-        return memoryData
     }
 }

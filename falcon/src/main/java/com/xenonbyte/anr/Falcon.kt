@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *     .setAnrThreshold(4000L, 8000L)  // 前台 4 秒，后台 8 秒
  *     .setSlowRunnableThreshold(300)  // 慢任务阈值 300ms
  *     .setSamplingRate(0.8f)          // 80% 采样率
- *     .setListener(object : FalconEventListener {
+ *     .setEventListener(object : FalconEventListener {
  *         override fun onAnr(...) { /* 处理 ANR */ }
  *         override fun onSlowRunnable(...) { /* 处理慢任务 */ }
  *     })
@@ -96,7 +96,7 @@ class Falcon private constructor() {
          *
          * @param app 应用 Application
          * @param config 监控配置
-         * @throws IllegalStateException 如果重复初始化
+         * 重复调用会使用最新配置替换旧配置；如果当前已在监控，则会平滑重建内部组件并继续监控。
          */
         @JvmStatic
         fun initialize(app: Application, config: FalconConfig) {
@@ -107,7 +107,7 @@ class Falcon private constructor() {
          * 开始监控
          *
          * 调用此方法后，Falcon 开始监控主线程消息和 ANR。
-         * 必须先调用 [initialize] 进行初始化。
+         * 建议先调用 [initialize] 进行初始化；如果尚未初始化，则本次调用不会生效。
          */
         @JvmStatic
         fun startMonitoring() {
@@ -118,11 +118,27 @@ class Falcon private constructor() {
          * 停止监控
          *
          * 停止后不再监控主线程消息和 ANR。
-         * 可以再次调用 [startMonitoring] 重新开始监控。
+         * 可以再次调用 [startMonitoring] 重新开始监控；如果尚未初始化，则本次调用不会生效。
          */
         @JvmStatic
         fun stopMonitoring() {
             getInstance().stop()
+        }
+
+        /**
+         * 获取当前生命周期状态。
+         */
+        @JvmStatic
+        fun getLifecycleState(): FalconLifecycleState {
+            return getInstance().getLifecycleStateInternal()
+        }
+
+        /**
+         * 获取当前对外健康状态。
+         */
+        @JvmStatic
+        fun getHealthState(): FalconHealthState {
+            return getInstance().controller?.getHealthState() ?: FalconHealthState.NOT_INITIALIZED
         }
 
         /**
@@ -198,9 +214,10 @@ class Falcon private constructor() {
      * 开始监控
      */
     private fun start() {
+        val controller = controller ?: return
         if (isEnable.compareAndSet(false, true)) {
             // 开启检测
-            controller?.start()
+            controller.start()
         }
     }
 
@@ -213,6 +230,14 @@ class Falcon private constructor() {
             controller?.stop()
             // 清理线程本地缓存
             FalconUtils.clearDateFormatCache()
+        }
+    }
+
+    private fun getLifecycleStateInternal(): FalconLifecycleState {
+        return when {
+            controller == null -> FalconLifecycleState.NOT_INITIALIZED
+            isEnable.get() -> FalconLifecycleState.MONITORING
+            else -> FalconLifecycleState.STOPPED
         }
     }
 }

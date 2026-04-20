@@ -27,49 +27,49 @@ class DeviceData(
 ) : DumpData {
 
     companion object {
-        //制造商
+        // 品牌
         const val BRAND = "brand"
 
-        //主板
+        // 主板
         const val BOARD = "board"
 
-        //硬件名
+        // 硬件名
         const val HARDWARE = "hardware"
 
-        //产品名
+        // 产品名
         const val PRODUCT = "product"
 
-        //制造商
+        // 制造商
         const val MANUFACTURER = "manufacturer"
 
-        //型号
+        // 型号
         const val MODEL = "model"
 
-        //系统名
+        // 系统名
         const val DISPLAY = "display"
 
-        //系统版本
+        // 系统版本
         const val VERSION = "version"
 
-        //物理内存
+        // 物理内存
         const val TOTAL_MEMORY = "total_memory"
 
-        //可用内存
+        // 可用内存
         const val FREE_MEMORY = "free_memory"
 
-        //cpu架构
+        // CPU 架构
         const val CPU_API = "cpu_api"
 
-        //cpu核心
+        // CPU 核心
         const val CPU_CORE = "cpu_core"
 
-        //cpu最小频率
+        // CPU 最小频率
         const val CPU_MIN_FREQ = "cpu_min_freq"
 
-        //cpu最大频率
+        // CPU 最大频率
         const val CPU_MAX_FREQ = "cpu_max_freq"
 
-        //cpu当前频率
+        // CPU 当前频率
         const val CPU_CUR_FREQ = "cpu_cur_freq"
     }
 

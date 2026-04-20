@@ -25,11 +25,23 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
     api libs.xenonbyte.activitywatcher
     api project(':falcon-dump')
+
+    testImplementation libs.junit
+    testImplementation libs.mockk
+    testImplementation libs.robolectric
+    testImplementation libs.truth
 }
 
 publishing {
@@ -37,7 +49,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.xenonbyte'
             artifactId = 'dumper-ext'
-            version = '1.0.0'
+            version = '1.0.1'
 
             afterEvaluate {
                 from components.release

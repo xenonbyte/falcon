@@ -163,20 +163,19 @@ internal class MessageSamplingModel(
     fun getSamplingDataDeque(): Deque<MessageSamplingData> {
         lock.readLock().lock()
         try {
-            val samplingSize = samplingDataMap.size()
-            val currentMapIndex = (samplingCurrentIndex % maxCacheSize).toInt()
-            val messageSamplingDataDeque = LinkedList<MessageSamplingData>()
-            for (i in 0 until samplingSize) {
-                var index = currentMapIndex - i
-                if (index < 0) {
-                    index += maxCacheSize
-                }
-                val samplingData = samplingDataMap.valueAt(index)
-                samplingData?.apply {
-                    messageSamplingDataDeque.offer(this)
-                }
-            }
-            return messageSamplingDataDeque
+            return buildSamplingDataDeque { it }
+        } finally {
+            lock.readLock().unlock()
+        }
+    }
+
+    /**
+     * 获取采样数据队列快照，避免异步消费阶段读到对象池复用后的数据。
+     */
+    fun getSamplingDataDequeSnapshot(): Deque<MessageSamplingData> {
+        lock.readLock().lock()
+        try {
+            return buildSamplingDataDeque { it.snapshot() }
         } finally {
             lock.readLock().unlock()
         }
@@ -265,7 +264,8 @@ internal class MessageSamplingModel(
      * @return[MessageSamplingData]采样数据实例
      */
     private fun getSamplingData(samplingIndex: Long): MessageSamplingData? {
-        if (samplingIndex > samplingCurrentIndex ||
+        if (samplingIndex < 0 ||
+            samplingIndex > samplingCurrentIndex ||
             samplingIndex <= samplingCurrentIndex - maxCacheSize
         ) {
             return null
@@ -292,5 +292,28 @@ internal class MessageSamplingModel(
             samplingDataPool.recycle(oldSamplingData)
         }
         return samplingData
+    }
+
+    private fun buildSamplingDataDeque(transform: (MessageSamplingData) -> MessageSamplingData): Deque<MessageSamplingData> {
+        val samplingSize = samplingDataMap.size()
+        val messageSamplingDataDeque = LinkedList<MessageSamplingData>()
+        if (samplingSize == 0) {
+            return messageSamplingDataDeque
+        }
+
+        val latestSamplingIndex = getLatestSamplingIndex() ?: return messageSamplingDataDeque
+        for (i in 0 until samplingSize) {
+            val samplingData = getSamplingData(latestSamplingIndex - i) ?: continue
+            messageSamplingDataDeque.offer(transform(samplingData))
+        }
+        return messageSamplingDataDeque
+    }
+
+    private fun getLatestSamplingIndex(): Long? {
+        return when {
+            getSamplingData(samplingCurrentIndex) != null -> samplingCurrentIndex
+            samplingCurrentIndex > 0 -> samplingCurrentIndex - 1
+            else -> null
+        }
     }
 }

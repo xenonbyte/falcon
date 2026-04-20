@@ -12,10 +12,10 @@ class ActivityData(
     val appForeground: Boolean
 ) : DumpData {
     companion object {
-        //activity堆栈
+        // activity 堆栈
         const val ACTIVITY_STACK = "activity_stack"
 
-        //app是否前台
+        // app 是否前台
         const val APP_FOREGROUND = "app_foreground"
     }
 

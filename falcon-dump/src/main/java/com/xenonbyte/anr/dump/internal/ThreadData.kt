@@ -14,7 +14,7 @@ class ThreadData(
     val list: List<ThreadInfo>,
 ) : DumpData {
     companion object {
-        //线程信息列表
+        // 线程信息列表
         const val THREAD_INFO_LIST = "thread_info_list"
     }
 
@@ -28,7 +28,6 @@ class ThreadData(
             put(THREAD_INFO_LIST, threadInfoList)
         }
     }
-
 }
 
 /**
@@ -54,25 +53,25 @@ class ThreadInfo(
 ) {
 
     companion object {
-        //线程id
+        // 线程 id
         const val THREAD_ID = "thread_id"
 
-        //线程名
+        // 线程名
         const val THREAD_NAME = "thread_name"
 
-        //线程状态
+        // 线程状态
         const val THREAD_STATE = "thread_state"
 
-        //线程优先级
+        // 线程优先级
         const val THREAD_PRIORITY = "thread_priority"
 
-        //线程是否存活
+        // 线程是否存活
         const val THREAD_ALIVE = "thread_alive"
 
-        //线程是否中断
+        // 线程是否中断
         const val THREAD_INTERRUPTED = "thread_interrupted"
 
-        //线程是否是守护线程
+        // 线程是否是守护线程
         const val THREAD_DAEMON = "thread_daemon"
     }
 
@@ -87,5 +86,4 @@ class ThreadInfo(
             put(THREAD_DAEMON, threadDaemon)
         }
     }
-
 }

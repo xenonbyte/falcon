@@ -37,11 +37,10 @@ class ThreadDumper : Dumper<ThreadData>("ThreadDumper") {
                 threadInfoList.add(threadInfo)
             }
         }
-        //主线程信息放最前面
+        // 主线程信息放最前面
         mainThreadInfo?.let {
             threadInfoList.add(0, it)
         }
         return ThreadData(threadInfoList)
     }
-
 }

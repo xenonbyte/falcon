@@ -42,7 +42,6 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.cardview
-    implementation libs.xenonbyte.activitywatcher
     implementation project(':falcon')
     implementation project(':falcon-dump-ext')
 

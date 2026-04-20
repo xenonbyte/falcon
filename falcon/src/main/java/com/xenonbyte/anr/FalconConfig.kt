@@ -40,6 +40,8 @@ class FalconConfig(
     val hprofDumpEnabled: Boolean,
     val listener: FalconEventListener?,
 ) {
+    val dumpCollectionEnabled: Boolean
+        get() = hprofDumpEnabled
 
     private companion object {
         // 默认前台Anr触发阈值
@@ -196,8 +198,22 @@ class FalconConfig(
          * @param hprofDumpEnabled 是否开启
          * @return [FalconConfig.Builder]对象
          */
+        @Deprecated(message = "推荐使用setDumpCollectionEnabled(Boolean)方法")
         fun setHprofDumpEnabled(hprofDumpEnabled: Boolean): Builder {
             this.hprofDumpEnabled = hprofDumpEnabled
+            return this
+        }
+
+        /**
+         * 设置是否开启 Dumper 数据采集。
+         *
+         * 这是对 [setHprofDumpEnabled] 的语义化别名，推荐优先使用。
+         *
+         * @param enabled 是否开启
+         * @return [FalconConfig.Builder]对象
+         */
+        fun setDumpCollectionEnabled(enabled: Boolean): Builder {
+            this.hprofDumpEnabled = enabled
             return this
         }
 

@@ -43,6 +43,9 @@
 | 采样率控制 | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
 | 性能开销 | 极低 | 中等 | 极低 |
 | 扩展性 | ✅ 灵活 | ⚠️ 有限 | ⚠️ 有限 |
+
+## 🚀 快速开始
+
 ---
 
 ### 1. 引入依赖
@@ -79,7 +82,7 @@ FalconConfig config = new FalconConfig.Builder()
 
         }
 
-            @Override
+        @Override
         public void onAnr(long currentTimestamp,
                           @NonNull String mainStackTrace,
                           @Nullable MessageSamplingData messageSamplingData,
@@ -90,15 +93,15 @@ FalconConfig config = new FalconConfig.Builder()
         }
     })
     // 添加ANR事件的应用数据dumper
-    .addEventDumper(FalconEvent.ANR_EVENT, new AppDumper())
+    .addEventDumper(FalconEvent.ANR_EVENT, new FalconAppDumper())
     // 添加ANR事件的内存数据dumper
-    .addEventDumper(FalconEvent.ANR_EVENT, new MemoryDumper())
+    .addEventDumper(FalconEvent.ANR_EVENT, new FalconMemoryDumper())
     // 添加慢任务事件的线程数据dumper
-    .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new ThreadDumper())
+    .addEventDumper(FalconEvent.SLOW_RUNNABLE_EVENT, new FalconThreadDumper())
     .build();
 
 // 初始化并开启监测
-Falcon.initialize(context, config);
+Falcon.initialize(application, config);
 Falcon.startMonitoring();
 ```
 
@@ -106,19 +109,74 @@ Falcon.startMonitoring();
 >
 > ANR日志级别为 `LogLevel.ERROR`，慢任务日志级别为 `LogLevel.WARN`，不输出日志`LogLevel.NONE`
 
+> [!NOTE]
+>
+> - `Falcon.initialize(...)` 支持重复调用，后一次配置会替换前一次；如果当前已经在监控，会平滑重建内部组件并继续监控
+> - `Falcon.startMonitoring()` / `Falcon.stopMonitoring()` 在未初始化时是 no-op，不会抛异常，也不会偷偷改变后续初始化行为
+
 
 ## 数据采集（Dumpers）
 
 当应用发生 **ANR** 或 **慢任务** 时，**falcon** 会通过配置的 `Dumper` 收集设备数据，并将结果以 JSON 字符串传入事件回调中的 `hprofData` 参数。
-这里的 `hprofData` 是历史命名，实际内容并不是 HPROF 文件。
+这里的 `hprofData` 是历史命名，实际内容并不是 HPROF 文件，而是所有 Dumper 输出聚合后的 JSON 字符串。
+
+推荐使用 `FalconDumpPayload.parse(hprofData)` 做结构化解析。对于内置 dumper，优先使用稳定公开模型 accessors：
+
+```kotlin
+override fun onAnr(
+    currentTimestamp: Long,
+    mainStackTrace: String,
+    messageSamplingData: MessageSamplingData?,
+    messageSamplingDataDeque: Deque<MessageSamplingData>,
+    hprofData: String
+) {
+    val payload = FalconDumpPayload.parse(hprofData)
+    val packageName = payload.stableAppData()?.packageName
+    val memoryInfo = payload.stableMemoryData()
+}
+```
+
+`appData()` / `memoryData()` / `threadData()` 仍然保留兼容，但它们返回的是 `com.xenonbyte.anr.dump.internal` 命名空间下的历史模型，现已标记为 deprecated，新接入不建议继续依赖。
+
+如果某个 Dumper 结果在你的链路里属于必填，可以直接使用 `requireStableAppData()`、`requireStableMemoryData()`、`requireDeviceData()` 这类 helper，在缺失或采集失败时尽早显式暴露问题。
+
+如果希望回调直接收到结构化 payload，而不是每次手动解析，可以直接继承 `FalconDumpPayloadEventAdapter`：
+
+```kotlin
+FalconConfig.Builder()
+    .setEventListener(object : FalconDumpPayloadEventAdapter() {
+        override fun onAnr(
+            currentTimestamp: Long,
+            mainStackTrace: String,
+            messageSamplingData: MessageSamplingData?,
+            messageSamplingDataDeque: Deque<MessageSamplingData>,
+            dumpPayload: FalconDumpPayload
+        ) {
+            val packageName = dumpPayload.stableAppData()?.packageName
+            val memoryInfo = dumpPayload.stableMemoryData()
+        }
+    })
+```
+
+如果同时引入了 `dumper-ext`，还可以直接读取扩展数据：
+
+```kotlin
+val deviceModel = payload.deviceData()?.model
+val batteryCapacity = payload.batteryData()?.capacity
+val requiredDevice = payload.requireDeviceData()
+```
 
 ### 1. 内置Dumper
 
+`falcon` 主库已经通过传递依赖包含基础 Dumper，无需额外引入 `dumper` 组件。
+
 | Dumper | 描述 |
 |--------|------|
-| `AppDumper` | 应用数据转储器 |
-| `MemoryDumper` | 内存数据转储器 |
-| `ThreadDumper` | 线程数据转储器 |
+| `FalconAppDumper` | 应用数据转储器，返回稳定公开模型 |
+| `FalconMemoryDumper` | 内存数据转储器，返回稳定公开模型 |
+| `FalconThreadDumper` | 线程数据转储器，返回稳定公开模型 |
+
+历史的 `AppDumper` / `MemoryDumper` / `ThreadDumper` 仍然可用，但位于 `com.xenonbyte.anr.dump.internal` 命名空间，新接入不建议继续依赖。
 
 ### 2. 扩展Dumper
 
@@ -130,7 +188,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.xenonbyte:dumper-ext:2.0.0'
+    implementation 'com.github.xenonbyte:dumper-ext:1.0.0'
 }
 ```
 
@@ -181,27 +239,27 @@ class FdData(
 
 ## 消息回放
 
-当发生 **ANR** 时，**falcon** 会回放 **ANR** 之前若干个消息采样数据 `MessageSamplingData`，帮助重建问题场景
+当发生 **ANR** 时，**falcon** 会回放 **ANR** 之前若干个消息采样数据 `MessageSamplingData`，帮助重建问题场景。
 
 ### 消息采样数据：
 
 | 属性                 | 描述     | 说明                   |
 |--------------------|--------|----------------------|
-| **id**             | 消息Id   | 唯一标识                 |
+| **id**             | 采样记录Id | 主要用于序列化输出和排查追踪 |
 | **index**          | 消息索引   | 自增索引                 |
-| **message**        | 消息原始对象 | Android 中的 `Message` |
+| **message**        | 消息日志文本 | `Looper.setMessageLogging` 提供的消息字符串 |
 | **startTimestamp** | 消息开始时间 | 时间戳                  |
 | **endTimestamp**   | 消息结束时间 | 时间戳                  |
-| **duration**       | 消息执行时长 | 秒单位                  |
-| **status**         | 消息执行状态 | 成功/失败                |
+| **duration**       | 消息执行时长 | 毫秒单位                  |
+| **status**         | 消息执行状态 | `START` / `END`        |
 | **complete**       | 是否完成执行 | 发生ANR时为false         |
-| **stackTrace**     | 主线程堆栈  | 仅在耗时消息中出现            |
+| **stackTrace**     | 主线程堆栈  | 仅在达到堆栈采集条件时出现        |
 
 > [!TIP]
 >
-> - `stacSkTrace`堆栈追踪仅在耗时消息（执行时间 > 慢任务阈值 × 采集因子）中收集
+> - `stackTrace` 仅在消息执行时间超过 `slowRunnableThreshold * 0.8` 时才会尝试采集
 > - 当发生 ANR 时，当前消息采样数据处于未完成状态 (complete = false, duration = -1, endTimestamp = -1), 可通过后续的慢任务事件获取完整的采样数据
-> - 消息最大回访数量由`FalconConfig.Builder.setMessageSamplingMaxCacheSize`配置决定
+> - 消息最大回放数量由 `FalconConfig.Builder.setMessageSamplingMaxCacheSize` 配置决定
 
 
 ## 配置参数详解
@@ -213,10 +271,11 @@ class FdData(
 | **setSamplingRate** | Float | 1.0f (100%) | 消息采样率，平衡性能和精度 |
 | **setLogLevel** | LogLevel | WARN | 日志输出级别           |
 | **setEventListener** | FalconEventListener | 无 | 事件回调监听器          |
-| **setLogPrinter** | LogPrinter | android.android.Log | 日志打印器            |
+| **setLogPrinter** | LogPrinter | DefaultLogPrinter (`android.util.Log`) | 日志打印器 |
 | **setMessageSamplingMaxCacheSize** | Int | 30 | 采样消息最大缓存量        |
 | **addEventDumper** | FalconEvent, Dumper | 无 | 添加指定事件的数据转储器     |
-| **setHprofDumpEnabled** | Boolean | true | 开启 Dumper 数据采集（低端机型可关闭） |
+| **setHprofDumpEnabled** | Boolean | true | 控制是否执行 Dumper 数据采集；名称保留自历史版本 |
+| **setDumpCollectionEnabled** | Boolean | true | `setHprofDumpEnabled` 的语义化别名，推荐优先使用 |
 
 ### 采样率说明
 
@@ -251,6 +310,15 @@ Log.d("Falcon", healthStatus)
 Falcon.resetHealthMonitor()
 ```
 
+### 生命周期约定
+
+- `initialize()` 可以重复调用，适合热更新阈值、listener 和 dumper 配置
+- `startMonitoring()` 只有在完成 `initialize()` 后才会真正开启监控
+- `stopMonitoring()` 会断开 `setMessageLogging`、停止后台线程并清理采样缓存
+- 未初始化时调用 `startMonitoring()` / `stopMonitoring()` 是安全的 no-op
+- `getLifecycleState()` 可直接判断 `NOT_INITIALIZED / STOPPED / MONITORING`
+- `getHealthState()` 提供结构化健康状态，避免业务侧解析 `getHealthStatus()` 的文本
+
 ### 分环境配置
 
 ```kotlin
@@ -272,22 +340,16 @@ val config = if (BuildConfig.DEBUG) {
 详见：[工程化指南](ENGINEERING_GUIDE.md)
 
 
-## 📊 性能指标
+## 📊 性能说明
 
-### 资源占用
+当前仓库没有附带可复现的 benchmark 报告，因此不在 README 中给出固定性能数字。
 
-| 设备类型 | 内存占用 | CPU占用 | 电池消耗 |
-|----------|----------|---------|----------|
-| 低端设备 | ~2MB | <1% | 可忽略 |
-| 中端设备 | ~3MB | <0.5% | 可忽略 |
-| 高端设备 | ~5MB | <0.3% | 可忽略 |
+实际开销主要受以下因素影响：
 
-### 性能开销
-
-- 消息采样: <0.1ms
-- 堆栈捕获: 1-5ms
-- 数据采集: 5-20ms
-- 回调执行: 异步，不阻塞主线程
+- `samplingRate` 越高，主线程消息覆盖率越高，后台处理开销也越高
+- `setMessageSamplingMaxCacheSize` 越大，采样历史占用越高
+- `ThreadDumper`、`DeviceDumper`、`BatteryDumper` 等 Dumper 在事件触发时会带来额外 CPU / I/O 开销
+- 慢任务与 ANR 回调在线程池异步执行，不阻塞主线程，但回调内部的上报/持久化仍需自行限流
 
 
 ## 🛡️ 生产环境建议
@@ -300,7 +362,7 @@ val config = FalconConfig.Builder()
     .setSlowRunnableThreshold(500L)     // 平衡性能
     .setMessageSamplingMaxCacheSize(30) // 控制内存
     .setLogLevel(LogLevel.WARN)         // 仅重要日志
-    .setHprofDumpEnabled(isHighEndDevice()) // 按设备配置
+    .setHprofDumpEnabled(isHighEndDevice()) // 按设备能力控制 Dumper 采集
     .build()
 ```
 
@@ -340,23 +402,20 @@ class UploadListener : FalconEventListener {
 
 ```bash
 # 单元测试
-./gradlew test
-
-# 集成测试
-./gradlew connectedAndroidTest
+./gradlew :falcon:testDebugUnitTest :falcon-dump-ext:testDebugUnitTest
 
 # 代码质量检查
-./gradlew detekt
+./gradlew :falcon:detekt :falcon-dump:detekt :falcon-dump-ext:detekt
 ```
 
 ### 构建项目
 
 ```bash
 # Debug 构建
-./gradlew assembleDebug
+./gradlew :falcon-dump:assembleDebug :falcon-dump-ext:assembleDebug
 
 # Release 构建
-./gradlew assembleRelease
+./gradlew :falcon:assembleRelease
 ```
 
 

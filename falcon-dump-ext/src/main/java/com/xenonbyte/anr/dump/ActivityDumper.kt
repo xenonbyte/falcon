@@ -13,5 +13,4 @@ class ActivityDumper : Dumper<ActivityData>("ActivityDumper") {
     override fun collectData(app: Application): ActivityData {
         return ActivityData(ActivityWatcher.getStackJson(), !ActivityWatcher.isAppBackground())
     }
-
 }

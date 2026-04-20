@@ -62,7 +62,7 @@ class MyApplication : Application() {
                     currentTimestamp: Long,
                     mainStackTrace: String,
                     messageSamplingData: MessageSamplingData?,
-                    messageSamplingHistory: ArrayDeque<MessageSamplingData>,
+                    messageSamplingHistory: Deque<MessageSamplingData>,
                     hprofData: String
                 ) {
                     // 处理ANR（工作线程）
@@ -72,8 +72,8 @@ class MyApplication : Application() {
                 }
             })
             // 添加数据采集器
-            .addEventDumper(FalconEvent.ANR_EVENT, AppDumper())
-            .addEventDumper(FalconEvent.ANR_EVENT, MemoryDumper())
+            .addEventDumper(FalconEvent.ANR_EVENT, FalconAppDumper())
+            .addEventDumper(FalconEvent.ANR_EVENT, FalconMemoryDumper())
             .build()
 
         Falcon.initialize(this, config)
@@ -88,6 +88,18 @@ class MyApplication : Application() {
 // 在合适的时候停止监测（如应用退出）
 Falcon.stopMonitoring()
 ```
+
+### 4. 生命周期约定
+
+- `Falcon.initialize(...)` 支持重复调用，适合热更新阈值、listener 和 dumper 配置
+- `Falcon.startMonitoring()` 只有在完成初始化后才会真正开始监听主线程消息
+- 未初始化时调用 `Falcon.startMonitoring()` / `Falcon.stopMonitoring()` 是安全的 no-op
+- `Falcon.getLifecycleState()` 可直接判断当前是否未初始化、已停止或正在监控
+- `Falcon.getHealthState()` 适合业务代码做结构化判断，`Falcon.getHealthStatus()` 更适合日志/调试输出
+- `hprofData` 是历史命名，实际内容为 Dumper 聚合后的 JSON 字符串
+- 推荐使用 `FalconDumpPayload.parse(hprofData)` 解析 Dumper 输出；对于内置 Dumper，优先使用 `stableAppData()`、`stableMemoryData()`、`stableThreadData()` 这些稳定公开模型 accessor；旧的 `appData()` / `memoryData()` / `threadData()` 仅作兼容并已标记为 deprecated；扩展 Dumper 继续使用 `deviceData()`、`batteryData()` 等 accessor
+- 如果某项 Dumper 数据在业务上属于必填，可以使用 `requireStableAppData()`、`requireStableMemoryData()`、`requireDeviceData()` 等 helper，在缺失或采集失败时直接抛出异常
+- 如果不想在每个回调里手动 parse，可直接继承 `FalconDumpPayloadEventAdapter`，让回调参数直接收到 `FalconDumpPayload`
 
 ---
 
@@ -190,18 +202,18 @@ healthCheckHandler.post(object : Runnable {
 ```kotlin
 object FalconConfigFactory {
 
-    fun createProductionConfig(): FalconConfig {
+    fun createProductionConfig(context: Context): FalconConfig {
         return FalconConfig.Builder()
             // 前台ANR阈值：5秒（接近系统ANR阈值）
             .setAnrThreshold(5000L, 10000L)
             // 慢任务阈值：500ms（平衡性能和体验）
             .setSlowRunnableThreshold(500L)
-            // 消息缓存：30个（内存占用约2-3MB）
+            // 消息缓存：30个（实际占用取决于采样量和 Dumper 输出）
             .setMessageSamplingMaxCacheSize(30)
             // 日志级别：仅记录错误和警告
             .setLogLevel(LogLevel.WARN)
-            // 低端设备关闭数据分析
-            .setHprofDumpEnabled(isHighEndDevice())
+            // 按设备能力控制 Dumper 数据采集
+            .setHprofDumpEnabled(isHighEndDevice(context))
             // 自定义日志打印器（集成到现有日志系统）
             .setLogPrinter(CustomLogPrinter())
             .build()
@@ -218,7 +230,7 @@ object FalconConfigFactory {
             .build()
     }
 
-    private fun isHighEndDevice(): Boolean {
+    private fun isHighEndDevice(context: Context): Boolean {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         return activityManager.memoryClass >= 256
     }
@@ -256,7 +268,7 @@ config.setMessageSamplingMaxCacheSize(cacheSize)
 
 ### 2. CPU优化
 
-- 低端设备可以关闭数据分析（`setHprofDumpEnabled(false)`）
+- 低端设备可以关闭 Dumper 数据采集（`setHprofDumpEnabled(false)`）
 - 慢任务阈值不要设置过低（建议≥300ms）
 - 避免在回调中执行耗时操作
 
@@ -327,7 +339,7 @@ Log.d("Falcon", health)
 .setMessageSamplingMaxCacheSize(20)
 ```
 
-2. 关闭数据分析
+2. 关闭 Dumper 数据采集
 ```kotlin
 .setHprofDumpEnabled(false)
 ```
@@ -368,7 +380,7 @@ class MyApplication : Application() {
         val config = if (BuildConfig.DEBUG) {
             FalconConfigFactory.createDebugConfig()
         } else {
-            FalconConfigFactory.createProductionConfig()
+            FalconConfigFactory.createProductionConfig(this)
         }
 
         Falcon.initialize(this, config)

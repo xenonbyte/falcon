@@ -25,10 +25,18 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
-
+    testImplementation libs.junit
+    testImplementation libs.robolectric
 }
 
 publishing {
@@ -36,7 +44,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.github.xenonbyte'
             artifactId = 'dumper'
-            version = '1.0.0'
+            version = '2.0.0'
 
             afterEvaluate {
                 from components.release
